@@ -28,60 +28,8 @@ class CrawlerManager:
         # 确保日志目录存在
         os.makedirs(self.logs_dir, exist_ok=True)
         
-        # 创建示例爬虫（如果不存在）
-        self._create_example_crawler()
-        
         # 从数据库加载定时任务
         self._load_scheduled_tasks_from_db()
-    
-    def _create_example_crawler(self):
-        example_dir = os.path.join(self.crawlers_dir, 'example_crawler')
-        os.makedirs(example_dir, exist_ok=True)
-        
-        # 创建main.py
-        main_py_path = os.path.join(example_dir, 'main.py')
-        if not os.path.exists(main_py_path):
-            with open(main_py_path, 'w', encoding='utf-8') as f:
-                f.write("""
-import time
-import random
-import logging
-
-# 设置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-
-def main():
-    logging.info("示例爬虫开始运行")
-    
-    # 模拟爬虫工作
-    for i in range(10):
-        logging.info(f"正在处理第 {i+1} 个任务")
-        time.sleep(random.uniform(0.5, 2))
-        
-        # 随机模拟一些错误
-        if random.random() < 0.2:
-            logging.warning(f"处理第 {i+1} 个任务时遇到警告")
-    
-    logging.info("示例爬虫运行完成")
-
-if __name__ == "__main__":
-    main()
-""")
-        
-        # 创建config.json
-        config_path = os.path.join(example_dir, 'config.json')
-        if not os.path.exists(config_path):
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump({
-                    "name": "示例爬虫",
-                    "description": "这是一个示例爬虫，用于演示系统功能",
-                    "version": "1.0",
-                    "author": "系统",
-                    "parameters": {}
-                }, f, ensure_ascii=False, indent=4)
     
     def get_all_crawlers(self):
         """获取所有爬虫信息"""
@@ -121,13 +69,18 @@ if __name__ == "__main__":
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                 
+                # 检查爬虫是否支持Web界面
+                web_support = config.get('web_support', False)
+                
                 return {
                     'id': crawler_id,
                     'name': config.get('name', crawler_id),
                     'description': config.get('description', ''),
                     'version': config.get('version', '1.0'),
                     'author': config.get('author', '未知'),
-                    'parameters': config.get('parameters', {})
+                    'parameters': config.get('parameters', {}),
+                    'web_support': web_support,
+                    'database': config.get('database', None)
                 }
             except Exception as e:
                 logging.error(f"读取爬虫配置失败: {crawler_id}, 错误: {str(e)}")

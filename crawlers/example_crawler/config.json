@@ -3,5 +3,7 @@
     "description": "这是一个示例爬虫，用于演示系统功能",
     "version": "1.0",
     "author": "系统",
-    "parameters": {}
+    "parameters": {},
+    "web_support": true,
+    "database": "crawler_data.db"
 }

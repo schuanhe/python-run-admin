@@ -6,6 +6,7 @@ import datetime
 import time
 import threading
 import logging
+import importlib.util
 from database.models import init_db, get_db, close_db, add_crawler_run, update_crawler_status, get_crawler_runs, get_active_crawlers, get_crawler_by_id
 from crawler_manager import CrawlerManager
 
@@ -33,7 +34,13 @@ def index():
 # 路由：爬虫列表
 @app.route('/crawlers')
 def list_crawlers():
-    crawlers = crawler_manager.get_all_crawlers()
+    # 获取爬虫列表，并添加web_support信息
+    crawlers = []
+    for crawler in crawler_manager.get_all_crawlers():
+        crawler_info = crawler_manager.get_crawler_by_id(crawler['id'])
+        if crawler_info:
+            crawlers.append(crawler_info)
+    
     active_crawlers = get_active_crawlers()
     active_ids = [c['id'] for c in active_crawlers]
     
@@ -140,6 +147,49 @@ def delete_schedule(task_id):
         return jsonify({'status': 'success'})
     else:
         return jsonify({'status': 'error', 'message': '任务不存在'}), 404
+
+# 注册爬虫Web界面
+def register_crawler_web_interfaces():
+    """注册所有支持Web界面的爬虫"""
+    crawlers = crawler_manager.get_all_crawlers()
+    for crawler in crawlers:
+        crawler_id = crawler['id']
+        crawler_info = crawler_manager.get_crawler_by_id(crawler_id)
+        
+        if crawler_info and crawler_info.get('web_support', False):
+            crawler_path = os.path.join(crawler_manager.crawlers_dir, crawler_id)
+            web_module_path = os.path.join(crawler_path, 'web.py')
+            
+            if os.path.exists(web_module_path):
+                try:
+                    # 动态导入web.py模块
+                    spec = importlib.util.spec_from_file_location(f"crawler_{crawler_id}_web", web_module_path)
+                    web_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(web_module)
+                    
+                    # 创建并注册蓝图
+                    if hasattr(web_module, 'create_blueprint'):
+                        blueprint = web_module.create_blueprint(crawler_id, crawler_path)
+                        app.register_blueprint(blueprint)
+                        logging.info(f"已注册爬虫Web界面: {crawler_id}")
+                except Exception as e:
+                    logging.error(f"注册爬虫Web界面失败: {crawler_id}, 错误: {str(e)}")
+
+# 路由：访问爬虫Web界面
+@app.route('/crawler_web/<crawler_id>')
+def crawler_web(crawler_id):
+    crawler = crawler_manager.get_crawler_by_id(crawler_id)
+    if not crawler:
+        return jsonify({'status': 'error', 'message': '爬虫不存在'}), 404
+    
+    if not crawler.get('web_support', False):
+        return jsonify({'status': 'error', 'message': '该爬虫不支持Web界面'}), 404
+    
+    # 重定向到爬虫的Web界面
+    return redirect(f"/crawler/{crawler_id}/")
+
+# 注册爬虫Web界面
+register_crawler_web_interfaces()
 
 if __name__ == '__main__':
     app.run(debug=True)

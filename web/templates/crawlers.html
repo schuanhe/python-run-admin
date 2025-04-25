@@ -36,11 +36,14 @@
                                     <p class="card-text">{{ crawler.description }}</p>
                                     <p class="card-text"><small class="text-muted">版本: {{ crawler.version }} | 作者: {{ crawler.author }}</small></p>
                                 </div>
-                                <div class="card-footer">
+                                <div class="card-footer d-flex justify-content-between">
                                     <button class="btn btn-primary run-crawler" data-crawler-id="{{ crawler.id }}"
                                         {% if crawler.id in active_ids %}disabled{% endif %}>
                                         {% if crawler.id in active_ids %}运行中{% else %}运行爬虫{% endif %}
                                     </button>
+                                    {% if crawler.web_support %}
+                                    <a href="/crawler_web/{{ crawler.id }}" class="btn btn-info">数据管理</a>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
