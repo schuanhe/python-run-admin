@@ -1,0 +1,143 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>爬虫管理</h2>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">活动爬虫</h5>
+                <button id="refresh-status" class="btn btn-sm btn-outline-secondary">刷新状态</button>
+            </div>
+            <div class="card-body">
+                <div id="active-crawlers-container">
+                    <p>正在加载活动爬虫...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">可用爬虫</h5>
+            </div>
+            <div class="card-body">
+                {% if crawlers %}
+                    <div class="row">
+                        {% for crawler in crawlers %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ crawler.name }}</h5>
+                                    <p class="card-text">{{ crawler.description }}</p>
+                                    <p class="card-text"><small class="text-muted">版本: {{ crawler.version }} | 作者: {{ crawler.author }}</small></p>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary run-crawler" data-crawler-id="{{ crawler.id }}"
+                                        {% if crawler.id in active_ids %}disabled{% endif %}>
+                                        {% if crawler.id in active_ids %}运行中{% else %}运行爬虫{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>没有找到可用的爬虫。请确保爬虫目录中包含有效的爬虫配置。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 刷新活动爬虫状态
+    function refreshActiveStatus() {
+        $.ajax({
+            url: '/crawlers/status',
+            type: 'GET',
+            success: function(data) {
+                let html = '';
+                if (data.length > 0) {
+                    html = '<div class="table-responsive"><table class="table table-striped"><thead><tr>' +
+                           '<th>爬虫名称</th><th>开始时间</th><th>状态</th><th>操作</th>' +
+                           '</tr></thead><tbody>';
+                    
+                    data.forEach(function(crawler) {
+                        html += '<tr>' +
+                                '<td>' + crawler.crawler_name + '</td>' +
+                                '<td>' + crawler.start_time + '</td>' +
+                                '<td><span class="badge bg-success">运行中</span></td>' +
+                                '<td><a href="/logs/' + crawler.id + '" class="btn btn-sm btn-info">查看日志</a></td>' +
+                                '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                } else {
+                    html = '<p>当前没有正在运行的爬虫。</p>';
+                }
+                
+                $('#active-crawlers-container').html(html);
+                
+                // 更新运行按钮状态
+                $('.run-crawler').prop('disabled', false).text('运行爬虫');
+                data.forEach(function(crawler) {
+                    $('.run-crawler[data-crawler-id="' + crawler.crawler_id + '"]')
+                        .prop('disabled', true)
+                        .text('运行中');
+                });
+            },
+            error: function() {
+                $('#active-crawlers-container').html('<p class="text-danger">获取爬虫状态失败</p>');
+            }
+        });
+    }
+    
+    // 页面加载完成后执行
+    $(document).ready(function() {
+        // 初始加载活动爬虫
+        refreshActiveStatus();
+        
+        // 设置定时刷新（每10秒）
+        setInterval(refreshActiveStatus, 10000);
+        
+        // 手动刷新按钮
+        $('#refresh-status').click(function() {
+            refreshActiveStatus();
+        });
+        
+        // 运行爬虫按钮
+        $('.run-crawler').click(function() {
+            const button = $(this);
+            const crawlerId = button.data('crawler-id');
+            
+            button.prop('disabled', true).text('启动中...');
+            
+            $.ajax({
+                url: '/crawlers/run/' + crawlerId,
+                type: 'POST',
+                success: function(data) {
+                    if (data.status === 'success') {
+                        button.text('运行中');
+                        // 刷新活动爬虫列表
+                        setTimeout(refreshActiveStatus, 1000);
+                    } else {
+                        button.prop('disabled', false).text('运行爬虫');
+                        alert('启动爬虫失败: ' + data.message);
+                    }
+                },
+                error: function() {
+                    button.prop('disabled', false).text('运行爬虫');
+                    alert('启动爬虫失败，请检查系统日志');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

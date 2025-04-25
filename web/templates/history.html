@@ -1,0 +1,73 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>爬虫运行历史</h2>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>爬虫名称</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>状态</th>
+                        <th>运行类型</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if runs %}
+                        {% for run in runs %}
+                        <tr>
+                            <td>{{ run.crawler_name }}</td>
+                            <td>{{ run.start_time }}</td>
+                            <td>{{ run.end_time if run.end_time else '进行中' }}</td>
+                            <td>
+                                {% if run.status == 'running' %}
+                                    <span class="badge bg-success">运行中</span>
+                                {% elif run.status == 'completed' %}
+                                    <span class="badge bg-primary">已完成</span>
+                                {% elif run.status == 'error' %}
+                                    <span class="badge bg-danger">错误</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ run.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if run.run_type == 'manual' %}
+                                    <span class="badge bg-info">手动运行</span>
+                                {% elif run.run_type == 'scheduled' %}
+                                    <span class="badge bg-warning">定时任务</span>
+                                    {% if run.schedule_id %}
+                                        <span class="badge bg-secondary">任务ID: {{ run.schedule_id[:8] }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ run.run_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/logs/{{ run.id }}" class="btn btn-sm btn-info">查看日志</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">暂无运行记录</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        console.log("历史记录页面加载完成");
+    });
+</script>
+{% endblock %}

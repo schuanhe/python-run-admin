@@ -1,0 +1,77 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>日志查看</h2>
+    <div>
+        <a href="/history" class="btn btn-outline-secondary">返回历史记录</a>
+        <button id="refresh-log" class="btn btn-outline-primary">刷新日志</button>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ crawler_name }} - {{ start_time }}</h5>
+    </div>
+    <div class="card-body">
+        <div id="log-container" class="bg-dark text-light p-3 rounded" style="height: 500px; overflow-y: auto; font-family: monospace;">
+            <pre id="log-content">{{ log_content }}</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // 获取当前URL中的run_id
+        const pathParts = window.location.pathname.split('/');
+        const runId = pathParts[pathParts.length - 1];
+        
+        // 自动滚动到日志底部
+        const logContainer = document.getElementById('log-container');
+        logContainer.scrollTop = logContainer.scrollHeight;
+        
+        // 刷新日志按钮
+        $('#refresh-log').click(function() {
+            $.ajax({
+                url: '/logs/content/' + runId,
+                type: 'GET',
+                success: function(data) {
+                    if (data.content) {
+                        $('#log-content').text(data.content);
+                        logContainer.scrollTop = logContainer.scrollHeight;
+                    }
+                },
+                error: function() {
+                    alert('刷新日志失败');
+                }
+            });
+        });
+        
+        // 对于正在运行的爬虫，自动刷新日志（每5秒）
+        function checkStatus() {
+            $.ajax({
+                url: '/crawlers/status',
+                type: 'GET',
+                success: function(data) {
+                    // 检查当前日志的爬虫是否在运行中
+                    const isRunning = data.some(function(crawler) {
+                        return crawler.id === runId;
+                    });
+                    
+                    if (isRunning) {
+                        // 如果在运行中，刷新日志
+                        $('#refresh-log').click();
+                        // 继续定时检查
+                        setTimeout(checkStatus, 5000);
+                    }
+                }
+            });
+        }
+        
+        // 开始检查状态
+        setTimeout(checkStatus, 5000);
+    });
+</script>
+{% endblock %}

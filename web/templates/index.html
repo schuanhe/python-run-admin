@@ -1,0 +1,56 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">多语言爬虫管理系统</h1>
+    <p class="lead">一个简单易用的爬虫管理平台，支持多种语言的爬虫脚本管理、运行状态监控和日志查看。</p>
+    <hr class="my-4">
+    <p>通过本系统，您可以：</p>
+    <ul>
+        <li>管理和运行不同语言编写的爬虫</li>
+        <li>监控爬虫运行状态</li>
+        <li>查看爬虫运行日志</li>
+        <li>设置定时任务自动运行爬虫</li>
+    </ul>
+    <a class="btn btn-primary btn-lg" href="/crawlers" role="button">开始使用</a>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">爬虫管理</h5>
+                <p class="card-text">查看所有可用爬虫，启动或停止爬虫任务。</p>
+                <a href="/crawlers" class="btn btn-outline-primary">进入管理</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">运行历史</h5>
+                <p class="card-text">查看爬虫的运行历史记录和日志信息。</p>
+                <a href="/history" class="btn btn-outline-primary">查看历史</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">定时任务</h5>
+                <p class="card-text">设置爬虫的定时运行计划。</p>
+                <a href="/schedules" class="btn btn-outline-primary">设置任务</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 页面加载完成后执行
+    $(document).ready(function() {
+        console.log("首页加载完成");
+    });
+</script>
+{% endblock %}
