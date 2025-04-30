@@ -56,11 +56,11 @@ http://localhost:5000
 4. 重启系统或刷新页面即可看到新添加的爬虫
 
 ## 图片
-![](image\img.png)
+![](image//img.png)
 
-![](image\img_1.png)
+![](image/img_1.png)
 
-![](image\img_2.png)
+![](image\\img_2.png)
 
 ## 支持的爬虫语言
 
